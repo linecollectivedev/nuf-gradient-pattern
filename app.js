@@ -822,10 +822,36 @@ function positionColorPicker() {
   const rect = activeColorButton.getBoundingClientRect();
   const pickerWidth = colorPicker.offsetWidth;
   const pickerHeight = colorPicker.offsetHeight;
-  const left = rect.left - pickerWidth - 12 >= 12 ? rect.left - pickerWidth - 12 : Math.max(12, rect.right - pickerWidth);
-  const top = Math.min(window.innerHeight - pickerHeight - 12, Math.max(12, rect.top - 80));
+  const viewport = window.visualViewport;
+  const viewportLeft = viewport?.offsetLeft ?? 0;
+  const viewportTop = viewport?.offsetTop ?? 0;
+  const viewportWidth = viewport?.width ?? window.innerWidth;
+  const viewportHeight = viewport?.height ?? window.innerHeight;
+  const gap = 12;
+  const minLeft = viewportLeft + gap;
+  const maxLeft = Math.max(minLeft, viewportLeft + viewportWidth - pickerWidth - gap);
+  const minTop = viewportTop + gap;
+  const maxTop = Math.max(minTop, viewportTop + viewportHeight - pickerHeight - gap);
+  const isMobile = window.matchMedia('(max-width: 700px)').matches;
+  const preferredLeft = isMobile
+    ? viewportLeft + (viewportWidth - pickerWidth) / 2
+    : (rect.left - pickerWidth - gap >= minLeft ? rect.left - pickerWidth - gap : rect.right - pickerWidth);
+  const preferredTop = isMobile
+    ? viewportTop + (viewportHeight - pickerHeight) / 2
+    : rect.top - 80;
+  const left = Math.min(maxLeft, Math.max(minLeft, preferredLeft));
+  const top = Math.min(maxTop, Math.max(minTop, preferredTop));
   colorPicker.style.left = `${left}px`;
   colorPicker.style.top = `${top}px`;
+}
+
+function syncVisualViewport() {
+  const viewport = window.visualViewport;
+  const height = viewport?.height ?? window.innerHeight;
+  const top = viewport?.offsetTop ?? 0;
+  document.documentElement.style.setProperty('--visual-viewport-height', `${height}px`);
+  document.documentElement.style.setProperty('--visual-viewport-top', `${top}px`);
+  positionColorPicker();
 }
 
 function openColorPicker(button) {
@@ -971,7 +997,10 @@ document.addEventListener('pointerdown', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !colorPicker.hidden) closeColorPicker({ restoreFocus: true });
 });
-window.addEventListener('resize', positionColorPicker);
+window.addEventListener('resize', syncVisualViewport, { passive: true });
+window.visualViewport?.addEventListener('resize', syncVisualViewport, { passive: true });
+window.visualViewport?.addEventListener('scroll', syncVisualViewport, { passive: true });
+syncVisualViewport();
 
 function syncControls() {
   document.querySelectorAll('[data-key]').forEach((input) => {

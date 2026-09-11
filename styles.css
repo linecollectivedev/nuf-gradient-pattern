@@ -208,8 +208,14 @@ body.panel-hidden .preview-stage { right: 18px; }
 .export-cancel-button:hover { color: var(--ink); background: rgba(255,255,255,.07); }
 
 @media (max-width: 520px) {
-  .export-modal-backdrop { padding: 10px; place-items: end center; }
-  .export-modal { width: 100%; max-height: calc(100vh - 20px); padding: 22px 18px 18px; border-radius: 14px; }
+  .export-modal-backdrop {
+    inset: auto 0;
+    top: var(--visual-viewport-top, 0px);
+    height: var(--visual-viewport-height, 100dvh);
+    padding: 10px;
+    place-items: center;
+  }
+  .export-modal { width: 100%; max-height: calc(var(--visual-viewport-height, 100dvh) - 20px); padding: 22px 18px 18px; border-radius: 14px; }
   .export-segments.export-format-options { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -452,7 +458,12 @@ select option:checked {
 .color-picker-footer output { grid-area: opacity; width: 51px; display: grid; place-items: center; color: var(--muted); font-size: 9px; }
 
 @media (max-width: 700px) {
-  .color-picker { width: min(316px, calc(100vw - 24px)); }
+  .color-picker {
+    width: min(316px, calc(100vw - 24px));
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .wide-button, .ghost-button { height: 37px; border-radius: 9px; cursor: pointer; font-size: 10px; }
@@ -526,17 +537,17 @@ body.panel-hidden .ratio-bar { left: 50%; }
 .performance { position: fixed; z-index: 10; left: 19px; bottom: 18px; color: rgba(255,255,255,.5); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
 
 @media (max-width: 720px) {
-  html { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+  html { height: 100%; overflow: hidden; }
   body {
     width: 100%;
-    height: auto;
-    min-height: 100svh;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     padding: 10px;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
   }
   .topbar {
     position: relative;
@@ -560,8 +571,8 @@ body.panel-hidden .ratio-bar { left: 50%; }
     inset: auto;
     order: 2;
     width: 100%;
-    height: min(56.25vw, 360px);
-    min-height: 180px;
+    height: clamp(150px, 28dvh, 260px);
+    min-height: 0;
     flex: 0 0 auto;
   }
   #pattern-canvas { max-width: 100%; max-height: 100%; }
@@ -580,19 +591,22 @@ body.panel-hidden .ratio-bar { left: 50%; }
     order: 4;
     width: 100%;
     height: auto;
+    min-height: 0;
     max-height: none;
-    flex: 0 0 auto;
-    overflow: visible;
+    flex: 1 1 0;
+    overflow: hidden;
   }
-  .panel-scroll { flex: none; overflow: visible; }
+  .panel-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
   .panel.closed { display: none; opacity: 0; transform: none; }
   .open-panel { right: 10px; bottom: 10px; }
-  .performance {
-    position: relative;
-    inset: auto;
-    order: 5;
-    padding: 3px 2px 8px;
-  }
+  .performance { display: none; }
   .ratio-bar label { flex: 1; min-width: 0; }
   .ratio-bar input { width: 100%; min-width: 38px; }
   .ratio-bar select { width: 108px; }
@@ -604,7 +618,7 @@ body.panel-hidden .ratio-bar { left: 50%; }
   .secondary-button { padding: 0 9px; }
   .export-group .primary-button { padding-inline: 10px; }
   .preview-stage,
-  body.panel-hidden .preview-stage { min-height: 160px; }
+  body.panel-hidden .preview-stage { height: clamp(140px, 25dvh, 210px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
