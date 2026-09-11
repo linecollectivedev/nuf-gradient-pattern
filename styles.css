@@ -397,7 +397,7 @@ select option:checked {
 .color-picker {
   position: fixed;
   z-index: 60;
-  width: 282px;
+  width: 316px;
   padding: 15px;
   border: 1px solid rgba(255,255,255,.14);
   border-radius: 14px;
@@ -435,26 +435,24 @@ select option:checked {
 .opacity-slider::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, transparent, var(--picker-color, #5c0800)); pointer-events: none; }
 .opacity-slider input { z-index: 1; opacity: .9; cursor: default; }
 .opacity-slider input::-webkit-slider-runnable-track { background: transparent; }
-.color-picker-footer { display: grid; grid-template-columns: 32px 51px minmax(0,1fr) 32px; grid-template-areas: "eyedropper format hex copy" "opacity . . ."; align-items: center; gap: 7px; margin-top: 13px; }
-.color-picker-footer.without-eyedropper { grid-template-columns: 51px minmax(0,1fr) 32px; grid-template-areas: "format hex copy" "opacity . ."; }
-.color-picker-footer button, .color-picker-footer select, .color-picker-footer .hex-field, .color-picker-footer output { height: 32px; border: 1px solid rgba(255,255,255,.08); border-radius: 7px; background-color: rgba(255,255,255,.055); color: var(--ink); }
+.color-picker-footer { display: grid; grid-template-columns: 32px 51px minmax(0,1fr) 51px; grid-template-areas: "eyedropper format hex opacity"; align-items: center; gap: 7px; margin-top: 13px; }
+.color-picker-footer.without-eyedropper { grid-template-columns: 51px minmax(0,1fr) 51px; grid-template-areas: "format hex opacity"; }
+.color-picker-footer button, .color-picker-footer select, .color-picker-footer .color-value-field, .color-picker-footer output { height: 32px; border: 1px solid rgba(255,255,255,.08); border-radius: 7px; background-color: rgba(255,255,255,.055); color: var(--ink); }
 .color-picker-footer select { grid-area: format; width: 51px; padding: 0 18px 0 8px; background-position: calc(100% - 6px) center; background-size: 8px; font-size: 9px; opacity: 1; }
-.color-picker-footer select:disabled { opacity: 1; cursor: default; }
 .picker-icon-button { display: grid; place-items: center; padding: 0; cursor: pointer; }
+.picker-icon-button[hidden] { display: none; }
 .color-picker-footer #color-eyedropper { grid-area: eyedropper; }
-.color-picker-footer .copy-color { grid-area: copy; }
 .picker-icon-button:hover { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.1); }
 .picker-icon-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.hex-field { grid-area: hex; display: flex; align-items: center; min-width: 0; }
-.hex-field input { width: 100%; min-width: 0; height: 100%; padding: 0 10px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .02em; text-transform: uppercase; }
-.hex-field input::placeholder { color: #756d68; }
-.hex-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,91,49,.2); }
-.hex-field:has(input[aria-invalid="true"]) { border-color: #ff7357; box-shadow: 0 0 0 2px rgba(255,91,49,.16); }
+.color-value-field { grid-area: hex; display: flex; align-items: center; min-width: 0; }
+.color-value-field input { width: 100%; min-width: 0; height: 100%; padding: 0 10px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.color-value-field input::placeholder { color: #756d68; }
+.color-value-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,91,49,.2); }
+.color-value-field:has(input[aria-invalid="true"]) { border-color: #ff7357; box-shadow: 0 0 0 2px rgba(255,91,49,.16); }
 .color-picker-footer output { grid-area: opacity; width: 51px; display: grid; place-items: center; color: var(--muted); font-size: 9px; }
-.copy-color.copied { color: #9cdb91; border-color: rgba(156,219,145,.35); }
 
 @media (max-width: 700px) {
-  .color-picker { width: min(282px, calc(100vw - 24px)); }
+  .color-picker { width: min(316px, calc(100vw - 24px)); }
 }
 
 .wide-button, .ghost-button { height: 37px; border-radius: 9px; cursor: pointer; font-size: 10px; }

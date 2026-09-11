@@ -151,11 +151,14 @@
       <button class="picker-icon-button" id="color-eyedropper" type="button" aria-label="Pick color from screen" title="Pick color from screen">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 3 2 2-6.5 6.5 1 1-2 2-1-1-6.6 6.6-3 .9.9-3 6.6-6.6-1-1 2-2 1 1L19 3Z"/></svg>
       </button>
-      <select aria-label="Color format" disabled><option>HEX</option></select>
-      <label class="hex-field"><input id="color-hex" type="text" maxlength="7" placeholder="#RRGGBB" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Hex color code, including hash"></label>
-      <button class="picker-icon-button copy-color" id="copy-color" type="button" aria-label="Copy hex color" title="Copy hex color">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-      </button>
+      <select id="color-format" aria-label="Color format">
+        <option value="hex">HEX</option>
+        <option value="rgb">RGB</option>
+        <option value="css">CSS</option>
+        <option value="hsl">HSL</option>
+        <option value="hsb">HSB</option>
+      </select>
+      <label class="color-value-field"><input id="color-hex" type="text" maxlength="32" placeholder="#RRGGBB" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Color value"></label>
       <output>100%</output>
     </div>
   </div>

@@ -659,8 +659,9 @@ const colorPickerDot = document.querySelector('#color-picker-dot');
 const colorField = document.querySelector('#color-field');
 const colorHue = document.querySelector('#color-hue');
 const colorHex = document.querySelector('#color-hex');
-const copyColorButton = document.querySelector('#copy-color');
+const colorFormat = document.querySelector('#color-format');
 const eyeDropperButton = document.querySelector('#color-eyedropper');
+const colorPickerFooter = colorPicker.querySelector('.color-picker-footer');
 let activeColorKey = null;
 let activeColorButton = null;
 let pickerHsv = { h: 0, s: 0, v: 0 };
@@ -670,6 +671,21 @@ function normalizeHex(value) {
   if (/^[0-9a-f]{3}$/i.test(raw)) return `#${raw.split('').map((char) => char + char).join('').toLowerCase()}`;
   if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toLowerCase()}`;
   return null;
+}
+
+function hexToRgb255(hex) {
+  const value = normalizeHex(hex) || '#000000';
+  return {
+    r: parseInt(value.slice(1, 3), 16),
+    g: parseInt(value.slice(3, 5), 16),
+    b: parseInt(value.slice(5, 7), 16),
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const channels = [r, g, b].map(Number);
+  if (channels.some((channel) => !Number.isFinite(channel) || channel < 0 || channel > 255)) return null;
+  return `#${channels.map((channel) => Math.round(channel).toString(16).padStart(2, '0')).join('')}`;
 }
 
 function hexToHsv(hex) {
@@ -705,6 +721,71 @@ function hsvToHex({ h, s, v }) {
   return `#${rgb.map((channel) => Math.round((channel + m) * 255).toString(16).padStart(2, '0')).join('')}`;
 }
 
+function hslToHex(h, s, l) {
+  if (![h, s, l].every(Number.isFinite) || s < 0 || s > 100 || l < 0 || l > 100) return null;
+  const hue = ((h % 360) + 360) % 360;
+  const saturation = s / 100;
+  const lightness = l / 100;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const segment = hue / 60;
+  const x = chroma * (1 - Math.abs((segment % 2) - 1));
+  const m = lightness - chroma / 2;
+  let rgb = [0, 0, 0];
+  if (segment < 1) rgb = [chroma, x, 0];
+  else if (segment < 2) rgb = [x, chroma, 0];
+  else if (segment < 3) rgb = [0, chroma, x];
+  else if (segment < 4) rgb = [0, x, chroma];
+  else if (segment < 5) rgb = [x, 0, chroma];
+  else rgb = [chroma, 0, x];
+  return rgbToHex(...rgb.map((channel) => (channel + m) * 255));
+}
+
+const colorPlaceholders = Object.freeze({
+  hex: '#RRGGBB',
+  rgb: '255, 128, 64',
+  css: 'color: #FF8040;',
+  hsl: '20°, 100%, 63%',
+  hsb: '20°, 75%, 100%',
+});
+
+function formatColorValue(hex, format = colorFormat.value) {
+  const normalized = normalizeHex(hex) || '#000000';
+  const { r, g, b } = hexToRgb255(normalized);
+  const hsv = hexToHsv(normalized);
+  const lightness = hsv.v * (1 - hsv.s / 2);
+  const hslSaturation = lightness === 0 || lightness === 1 ? 0 : (hsv.v - lightness) / Math.min(lightness, 1 - lightness);
+  const hue = Math.round(hsv.h);
+  if (format === 'rgb') return `${r}, ${g}, ${b}`;
+  if (format === 'css') return `color: ${normalized.toUpperCase()};`;
+  if (format === 'hsl') return `${hue}°, ${Math.round(hslSaturation * 100)}%, ${Math.round(lightness * 100)}%`;
+  if (format === 'hsb') return `${hue}°, ${Math.round(hsv.s * 100)}%, ${Math.round(hsv.v * 100)}%`;
+  return normalized.toUpperCase();
+}
+
+function parseColorValue(value, format = colorFormat.value) {
+  const raw = String(value).trim();
+  if (format === 'hex') return normalizeHex(raw);
+  if (format === 'css') {
+    const cssValue = raw.replace(/^color\s*:\s*/i, '').replace(/;$/, '').trim();
+    const hex = normalizeHex(cssValue);
+    if (hex) return hex;
+    const cssNumbers = cssValue.match(/-?\d*\.?\d+/g)?.map(Number) || [];
+    if (/^rgb/i.test(cssValue) && cssNumbers.length >= 3) return rgbToHex(...cssNumbers.slice(0, 3));
+    if (/^hsl/i.test(cssValue) && cssNumbers.length >= 3) return hslToHex(...cssNumbers.slice(0, 3));
+    return null;
+  }
+  const numbers = raw.match(/-?\d*\.?\d+/g)?.map(Number) || [];
+  if (numbers.length < 3) return null;
+  if (format === 'rgb') return rgbToHex(...numbers.slice(0, 3));
+  if (format === 'hsl') return hslToHex(...numbers.slice(0, 3));
+  if (format === 'hsb') {
+    const [h, s, b] = numbers;
+    if (![h, s, b].every(Number.isFinite) || s < 0 || s > 100 || b < 0 || b > 100) return null;
+    return hsvToHex({ h: ((h % 360) + 360) % 360, s: s / 100, v: b / 100 });
+  }
+  return null;
+}
+
 function syncColorSwatches() {
   Object.keys(colorLabels).forEach((key) => {
     const swatch = document.querySelector(`[data-color-swatch="${key}"]`);
@@ -721,7 +802,8 @@ function syncPickerVisuals(updateInput = true) {
   colorPicker.style.setProperty('--picker-color', hex);
   colorHue.value = Math.round(pickerHsv.h);
   colorPickerDot.style.background = hex;
-  if (updateInput) colorHex.value = hex.toUpperCase();
+  colorHex.placeholder = colorPlaceholders[colorFormat.value];
+  if (updateInput) colorHex.value = formatColorValue(hex);
   colorHex.setAttribute('aria-invalid', 'false');
   colorField.setAttribute('aria-valuenow', Math.round(pickerHsv.v * 100));
 }
@@ -805,38 +887,43 @@ colorHue.addEventListener('input', () => {
   pickerHsv.h = Number(colorHue.value);
   applyPickerColor(hsvToHex(pickerHsv));
 });
+colorFormat.addEventListener('change', () => {
+  syncPickerVisuals();
+  colorHex.focus();
+  colorHex.select();
+});
 colorHex.addEventListener('focus', () => colorHex.select());
 colorHex.addEventListener('mouseup', (event) => event.preventDefault());
 colorHex.addEventListener('input', () => {
   const raw = colorHex.value.trim();
-  const isComplete = /^#?[0-9a-f]{6}$/i.test(raw);
-  colorHex.setAttribute('aria-invalid', String(Boolean(raw) && !/^#?[0-9a-f]{0,6}$/i.test(raw)));
-  if (!isComplete) return;
-  const normalized = normalizeHex(raw);
+  const normalized = parseColorValue(raw);
+  colorHex.setAttribute('aria-invalid', String(Boolean(raw) && !normalized));
   if (!normalized) return;
   pickerHsv = hexToHsv(normalized);
   applyPickerColor(normalized, false);
-  colorHex.value = normalized.toUpperCase();
 });
 colorHex.addEventListener('paste', (event) => {
-  const normalized = normalizeHex(event.clipboardData?.getData('text') || '');
+  const normalized = parseColorValue(event.clipboardData?.getData('text') || '');
   event.preventDefault();
   if (!normalized) {
     colorHex.setAttribute('aria-invalid', 'true');
-    showStatus('Paste a HEX color such as #FF6A00');
+    showStatus(`Paste a valid ${colorFormat.options[colorFormat.selectedIndex].text} color value`);
     return;
   }
   pickerHsv = hexToHsv(normalized);
   applyPickerColor(normalized);
   colorHex.setSelectionRange(0, colorHex.value.length);
-  showStatus(`${normalized.toUpperCase()} applied`);
+  showStatus(`${colorHex.value} applied`);
+});
+colorHex.addEventListener('copy', () => {
+  if (activeColorKey) showStatus(`${colorHex.value} copied`);
 });
 
-function commitHexInput() {
-  const normalized = normalizeHex(colorHex.value);
+function commitColorInput() {
+  const normalized = parseColorValue(colorHex.value);
   if (!normalized) {
     colorHex.setAttribute('aria-invalid', 'true');
-    colorHex.value = state[activeColorKey]?.toUpperCase() || '#000000';
+    colorHex.value = formatColorValue(state[activeColorKey] || '#000000');
     return false;
   }
   pickerHsv = hexToHsv(normalized);
@@ -846,47 +933,36 @@ function commitHexInput() {
 
 colorHex.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
-    if (commitHexInput()) colorHex.select();
+    if (commitColorInput()) colorHex.select();
   }
 });
-colorHex.addEventListener('blur', commitHexInput);
+colorHex.addEventListener('blur', commitColorInput);
 document.querySelector('#color-picker-close').addEventListener('click', () => closeColorPicker({ restoreFocus: true }));
-copyColorButton.addEventListener('click', async () => {
-  if (!activeColorKey) return;
-  const value = state[activeColorKey].toUpperCase();
-  colorHex.value = value;
-  colorHex.focus();
-  colorHex.select();
-  let copied = false;
-  try {
-    await navigator.clipboard.writeText(value);
-    copied = true;
-  } catch {
-    copied = document.execCommand('copy');
-  }
-  if (copied) {
-    copyColorButton.classList.add('copied');
-    showStatus(`${value} copied`);
-    window.setTimeout(() => copyColorButton.classList.remove('copied'), 1000);
-  } else {
-    showStatus('Color selected — press ⌘C to copy');
-  }
-});
 
-if ('EyeDropper' in window) {
+function hideScreenColorPicker() {
+  eyeDropperButton.hidden = true;
+  colorPickerFooter.classList.add('without-eyedropper');
+}
+
+if ('EyeDropper' in window && window.isSecureContext) {
   eyeDropperButton.addEventListener('click', async () => {
     try {
-      const result = await new EyeDropper().open();
+      const result = await new window.EyeDropper().open();
       const normalized = normalizeHex(result.sRGBHex);
       if (normalized) {
         pickerHsv = hexToHsv(normalized);
         applyPickerColor(normalized);
+        colorHex.focus();
+        colorHex.select();
       }
-    } catch { /* User cancelled the eyedropper. */ }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      hideScreenColorPicker();
+      showStatus('Screen color picker is unavailable in this browser');
+    }
   });
 } else {
-  eyeDropperButton.hidden = true;
-  colorPicker.querySelector('.color-picker-footer').classList.add('without-eyedropper');
+  hideScreenColorPicker();
 }
 
 document.addEventListener('pointerdown', (event) => {
