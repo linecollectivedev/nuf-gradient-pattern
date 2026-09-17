@@ -1,5 +1,6 @@
 const canvas = document.querySelector('#pattern-canvas');
 const previewStage = document.querySelector('#preview-stage');
+const topbar = document.querySelector('.topbar');
 const statusEl = document.querySelector('#status');
 
 const defaults = Object.freeze({
@@ -562,6 +563,10 @@ function layoutPreviewCanvas() {
 
   canvas.style.width = `${Math.floor(width)}px`;
   canvas.style.height = `${Math.floor(height)}px`;
+
+  const canvasBounds = canvas.getBoundingClientRect();
+  const topbarBounds = topbar.getBoundingClientRect();
+  topbar.style.setProperty('--brand-offset-x', `${Math.max(0, Math.round(canvasBounds.left - topbarBounds.left))}px`);
 }
 
 function resizeCanvas(force = false, targetSize = null) {
